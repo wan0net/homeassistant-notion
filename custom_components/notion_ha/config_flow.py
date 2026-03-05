@@ -8,9 +8,19 @@ import aiohttp
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
-from homeassistant.const import CONF_API_KEY, CONF_NAME, CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_API_KEY, CONF_SCAN_INTERVAL
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+    NumberSelector,
+    NumberSelectorConfig,
+)
 
 from .const import (
     CONF_ACTIVE_STATUSES,
@@ -61,7 +71,11 @@ class NotionConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({vol.Required(CONF_API_KEY): str}),
+            data_schema=vol.Schema({
+                vol.Required(CONF_API_KEY): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                ),
+            }),
             errors=errors,
         )
 
@@ -90,13 +104,11 @@ class NotionConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="database",
-            data_schema=vol.Schema(
-                {vol.Required(CONF_DATABASE_ID): str}
-            ),
-            description_placeholders={
-                "help": "Paste the database URL or ID from Notion. "
-                "Make sure the integration has been added to the database."
-            },
+            data_schema=vol.Schema({
+                vol.Required(CONF_DATABASE_ID): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.URL)
+                ),
+            }),
             errors=errors,
         )
 
@@ -171,11 +183,26 @@ class NotionConfigFlow(ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_STATUS_PROPERTY, default=default_prop): vol.In(
-                    prop_names
+                vol.Required(CONF_STATUS_PROPERTY, default=default_prop): SelectSelector(
+                    SelectSelectorConfig(
+                        options=prop_names,
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
                 ),
-                vol.Required(CONF_ACTIVE_STATUSES): cv_multiselect(all_options),
-                vol.Required(CONF_COMPLETED_STATUSES): cv_multiselect(all_options),
+                vol.Required(CONF_ACTIVE_STATUSES): SelectSelector(
+                    SelectSelectorConfig(
+                        options=all_options,
+                        multiple=True,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
+                vol.Required(CONF_COMPLETED_STATUSES): SelectSelector(
+                    SelectSelectorConfig(
+                        options=all_options,
+                        multiple=True,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
             }
         )
 
@@ -216,12 +243,9 @@ class NotionOptionsFlow(OptionsFlow):
                         default=self._entry.options.get(
                             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
                         ),
-                    ): vol.All(int, vol.Range(min=60))
+                    ): NumberSelector(
+                        NumberSelectorConfig(min=60, max=3600, step=60, unit_of_measurement="s")
+                    ),
                 }
             ),
         )
-
-
-def cv_multiselect(options: list[str]):
-    """Voluptuous validator: list of strings, each must be in options."""
-    return vol.All(list, [vol.In(options)])
