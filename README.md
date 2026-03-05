@@ -4,16 +4,17 @@
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=wan0net&repository=homeassistant-notion&category=integration)
 
-A Home Assistant custom integration that connects your Notion databases to HA, exposing:
+A Home Assistant custom integration that connects your Notion databases to HA. A single HACS install gives you:
 
-- **Todo list entity** — create, update, and check off tasks. Changes write back to Notion instantly.
-- **Kanban sensor** — outputs a Todoist-compatible JSON structure for use with kanban Lovelace cards such as [todoist-kanban-card](https://github.com/corte/todoist-kanban-card) or [power-todoist-card](https://github.com/pgorod/power-todoist-card).
+- **Todo list entity** — create, update, and check off tasks; changes write back to Notion instantly.
+- **Kanban sensor** — structured state attributes for the included kanban card.
+- **`notion-kanban-card`** — a built-in custom Lovelace card: columns per status, drag-and-drop, click-to-move popup, label chips, due dates, and an *Archive All* button. No third-party cards needed.
 
 ## Features
 
 - Works with any Notion database that has a `select` or `status` property for task state
 - Configurable active and completed status values — no hard-coded column names
-- Full write-back: create, rename, complete, and delete tasks from HA
+- Full write-back: create, rename, complete, and delete tasks from HA, or drag tasks between kanban columns
 - Configurable poll interval (default 5 min)
 - Supports multiple databases as separate config entries
 
@@ -31,9 +32,14 @@ A Home Assistant custom integration that connects your Notion databases to HA, e
 3. Search for "Notion" in HACS and install
 4. Restart Home Assistant
 
+HACS will install both the integration and the `notion-kanban-card` Lovelace resource automatically.
+
 ### Manual
 
-Copy `custom_components/notion_ha/` into your HA `custom_components/` directory and restart.
+1. Copy `custom_components/notion_ha/` into your HA `custom_components/` directory.
+2. Copy `www/notion-kanban-card.js` into your HA `www/` directory (create it if it doesn't exist).
+3. Add the JS file as a Lovelace resource (type: **module**, URL: `/local/notion-kanban-card.js`).
+4. Restart Home Assistant.
 
 ## Setup
 
@@ -41,7 +47,7 @@ Copy `custom_components/notion_ha/` into your HA `custom_components/` directory 
 
 1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations)
 2. Click **New integration**, give it a name (e.g. "Home Assistant"), select your workspace
-3. Copy the **Internal Integration Token** (starts with `secret_`)
+3. Copy the **Internal Integration Token**
 
 ### 2. Share your database with the integration
 
@@ -64,45 +70,44 @@ Add a **Todo** card to any dashboard and select the Notion todo entity. You can 
 
 ### Kanban card
 
-The kanban sensor outputs a Todoist-compatible JSON structure that works with existing kanban Lovelace cards — no modifications needed.
+Add a **Manual card** to your Lovelace dashboard:
 
-#### Step 1 — Install a kanban card via HACS
-
-Choose one:
-
-| Card | HACS link |
-|------|-----------|
-| [todoist-kanban-card](https://github.com/corte/todoist-kanban-card) | [![Open your Home Assistant instance and add a custom repository.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=corte&repository=todoist-kanban-card&category=plugin) |
-| [power-todoist-card](https://github.com/pgorod/power-todoist-card) | [![Open your Home Assistant instance and add a custom repository.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=pgorod&repository=power-todoist-card&category=plugin) |
-
-#### Step 2 — Add the card to your dashboard
-
-In your Lovelace dashboard, add a **Manual card** with the following YAML (replace the entity with your own — it will be named after your database):
-
-**todoist-kanban-card:**
 ```yaml
-type: custom:todoist-kanban-card
+type: custom:notion-kanban-card
 entity: sensor.personal_to_do_kanban
 ```
 
-**power-todoist-card:**
+The entity name is derived from your database name. If your database is called "Personal To-Do", the sensor is `sensor.personal_to_do_kanban`. You can confirm the exact name in **Settings → Devices & Services → Notion**.
+
+#### Card configuration
+
 ```yaml
-type: custom:power-todoist-card
-entity: sensor.personal_to_do_kanban
+type: custom:notion-kanban-card
+entity: sensor.my_notion_kanban   # required
+title: My Tasks                   # optional — overrides entity friendly name
+hide_sections:                    # optional — columns to hide, default: [Archive]
+  - Archive
+archive_all_section: Done         # optional — column that shows the Archive All button
 ```
 
-The sensor entity name is derived from your database name. If your database is called "Personal To-Do", the sensor will be `sensor.personal_to_do_kanban`. You can confirm the exact name in **Settings → Devices & Services → Notion**.
+#### Drag-and-drop write-back
 
-#### How it works
+Moving a card between columns calls the `notion_ha.set_item_status` HA service, which updates the page status in Notion immediately. Clicking a task opens a popup to choose the target column without drag-and-drop.
 
-The sensor exposes `sections` (your kanban columns, derived from the status values you configured) and `items` (your tasks) as state attributes in the exact format these cards expect. The card reads from the sensor and renders the columns — no Todoist account or API key required.
+The **Archive All** button on the configured column calls `notion_ha.archive_done`, which moves all completed (non-archive) items to the archive status in Notion.
 
-> **Note:** Drag-and-drop write-back between columns is not supported — these cards are hardcoded to call Todoist's API for that. Use the HA **Todo card** to create, complete, and delete tasks, which writes back to Notion in real time.
+### HA Services
+
+You can also call these services from automations or scripts:
+
+| Service | Fields | Description |
+|---------|--------|-------------|
+| `notion_ha.set_item_status` | `item_id`, `status` | Set the status of a Notion page |
+| `notion_ha.archive_done` | `archive_status` (optional, default `Archive`) | Move all completed items to the archive status |
 
 ## Limitations
 
-- Kanban card drag-and-drop write-back is not supported (cards are hardcoded to Todoist's API). Use the HA Todo card for write-back, or update status directly in Notion.
-- Image attachments on pages are not fetched.
+- Image attachments on Notion pages are not fetched.
 - Notion API rate limit: 3 requests/second. With large databases and short poll intervals you may hit this; increase the poll interval in Options if needed.
 
 ## License
