@@ -431,15 +431,27 @@ class NotionKanbanCard extends HTMLElement {
       });
     });
 
-    shadow.querySelectorAll(".col").forEach((col) => {
-      col.addEventListener("dragover", (e) => {
+    // Helper: find nearest ancestor column from any element inside it
+    const nearestCol = (el) => el.closest(".col");
+
+    // All elements inside columns must allow dragover so the drop fires
+    shadow.querySelectorAll(".col, .col *").forEach((el) => {
+      el.addEventListener("dragover", (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
-        col.classList.add("drag-over");
+        const col = nearestCol(el);
+        if (col) col.classList.add("drag-over");
       });
-      col.addEventListener("dragleave", () => col.classList.remove("drag-over"));
-      col.addEventListener("drop", (e) => {
+      el.addEventListener("dragleave", (e) => {
+        // Only remove highlight when leaving the column entirely
+        const col = nearestCol(el);
+        if (col && !col.contains(e.relatedTarget)) col.classList.remove("drag-over");
+      });
+      el.addEventListener("drop", (e) => {
         e.preventDefault();
+        e.stopPropagation();
+        const col = nearestCol(el);
+        if (!col) return;
         col.classList.remove("drag-over");
         if (!this._drag) return;
         const target = col.dataset.sectionName;

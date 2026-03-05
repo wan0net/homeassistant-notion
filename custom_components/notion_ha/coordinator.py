@@ -147,15 +147,15 @@ class NotionTodoCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=scan_interval),
         )
 
-    def _load_cache(self) -> dict[str, Any] | None:
-        """Return cached data from disk, or None if unavailable."""
+    def _load_cache_sync(self) -> dict[str, Any] | None:
+        """Blocking read — run in executor only."""
         try:
             return json.loads(self._cache_path.read_text())
         except Exception:
             return None
 
-    def _save_cache(self, data: dict[str, Any]) -> None:
-        """Persist data to disk cache."""
+    def _save_cache_sync(self, data: dict[str, Any]) -> None:
+        """Blocking write — run in executor only."""
         try:
             self._cache_path.write_text(json.dumps(data))
         except Exception as err:
@@ -163,7 +163,7 @@ class NotionTodoCoordinator(DataUpdateCoordinator):
 
     async def async_config_entry_first_refresh(self) -> None:
         """Load from cache immediately, then kick off a live refresh."""
-        cached = self._load_cache()
+        cached = await self.hass.async_add_executor_job(self._load_cache_sync)
         if cached:
             self.data = cached
             _LOGGER.debug("Loaded %d items from Notion cache", len(cached.get("items", [])))
@@ -185,7 +185,7 @@ class NotionTodoCoordinator(DataUpdateCoordinator):
             self.active_statuses,
             self.completed_statuses,
         )
-        self._save_cache(data)
+        self.hass.async_add_executor_job(self._save_cache_sync, data)
         return data
 
     # --- Write-back helpers ---
