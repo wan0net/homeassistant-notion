@@ -70,7 +70,7 @@ _CARD_REGISTERED = f"{DOMAIN}_card_registered"
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Serve and inject the bundled Lovelace card (once per HA lifetime)
     if not hass.data.get(_CARD_REGISTERED):
-        hass.http.async_register_static_paths([
+        await hass.http.async_register_static_paths([
             StaticPathConfig(
                 _CARD_URL,
                 str(Path(__file__).parent / "notion-kanban-card.js"),
