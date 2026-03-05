@@ -69,7 +69,6 @@ class NotionTodoListEntity(CoordinatorEntity[NotionTodoCoordinator], TodoListEnt
                     item["status"], self.coordinator.completed_statuses
                 ),
                 due=item["due_date"],
-                url=item["url"],
             )
             for item in self.coordinator.data["items"]
         ]
