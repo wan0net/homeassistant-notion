@@ -232,8 +232,15 @@ class NotionKanbanCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    // Don't re-render mid-drag — it destroys the dragged element
-    if (!this._drag) this._render();
+    if (this._drag) return; // don't re-render mid-drag
+
+    // Only re-render when our entity's state actually changes
+    const state = hass.states[this._config?.entity];
+    const changed = state?.last_changed;
+    if (changed === this._lastChanged) return;
+    this._lastChanged = changed;
+
+    this._render();
   }
 
   getCardSize() { return 4; }
