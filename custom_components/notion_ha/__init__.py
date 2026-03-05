@@ -1,8 +1,11 @@
 """Notion integration for Home Assistant."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import voluptuous as vol
 
+from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, CONF_SCAN_INTERVAL, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -59,7 +62,21 @@ def _get_any_coordinator(hass: HomeAssistant) -> NotionTodoCoordinator | None:
     return None
 
 
+_CARD_URL = "/notion_ha/notion-kanban-card.js"
+_CARD_REGISTERED = f"{DOMAIN}_card_registered"
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    # Serve and inject the bundled Lovelace card (once per HA lifetime)
+    if not hass.data.get(_CARD_REGISTERED):
+        hass.http.register_static_path(
+            _CARD_URL,
+            str(Path(__file__).parent / "notion-kanban-card.js"),
+            cache_headers=False,
+        )
+        add_extra_js_url(hass, _CARD_URL)
+        hass.data[_CARD_REGISTERED] = True
+
     session = async_get_clientsession(hass)
     client = NotionClient(session, entry.data[CONF_API_KEY])
 
