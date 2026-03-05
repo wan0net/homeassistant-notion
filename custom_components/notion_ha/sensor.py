@@ -54,27 +54,30 @@ class NotionKanbanSensor(CoordinatorEntity[NotionTodoCoordinator], SensorEntity)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return Todoist-compatible kanban structure."""
+        """Return full kanban structure for the notion-kanban-card custom card.
+
+        Includes all items (active + completed), all sections, labels, and due dates.
+        The custom card is responsible for filtering/hiding columns (e.g. Archive).
+        """
         if not self.coordinator.data:
             return {"sections": [], "items": []}
 
         data = self.coordinator.data
-        sections = data["sections"]
         items = [
             {
                 "id": item["id"],
                 "content": item["content"],
-                "section_id": item["status"].lower().replace(" ", "_"),
-                "checked": 1 if item["checked"] else 0,
+                "section_id": item["section_id"],
+                "status": item["status"],
+                "checked": item["checked"],
                 "due": {"date": item["due_date"]} if item["due_date"] else None,
+                "labels": item.get("labels", []),
             }
             for item in data["items"]
-            if not item["checked"]  # hide completed from kanban view
         ]
 
         return {
-            "sections": sections,
+            "sections": data["sections"],
             "items": items,
-            # project stub so cards that expect it don't error
             "project": {"id": self._entry.entry_id, "name": self._entry.title},
         }

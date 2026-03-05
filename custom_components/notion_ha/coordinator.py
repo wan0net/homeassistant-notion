@@ -36,6 +36,17 @@ def _get_select_value(page: dict, property_name: str) -> str | None:
     return None
 
 
+def _get_multiselect_values(page: dict, property_name: str) -> list[dict]:
+    """Extract name+color pairs from a multi_select property."""
+    prop = page.get("properties", {}).get(property_name, {})
+    if prop.get("type") == "multi_select":
+        return [
+            {"name": o["name"], "color": o.get("color", "default")}
+            for o in prop.get("multi_select", [])
+        ]
+    return []
+
+
 def _get_date_value(page: dict, property_name: str) -> str | None:
     """Extract start date string from a date property."""
     prop = page.get("properties", {}).get(property_name, {})
@@ -80,23 +91,27 @@ def transform_pages(
             continue
 
         due_date = _get_date_value(page, "Due")
+        labels = _get_multiselect_values(page, "Label")
 
         items.append(
             {
                 "id": page["id"],
                 "content": _get_title(page),
                 "status": status,
+                "section_id": status.lower().replace(" ", "_"),
                 "due_date": due_date,
                 "url": page.get("url"),
                 "checked": status in completed_statuses,
+                "labels": labels,
             }
         )
 
+    all_statuses = list(active_statuses) + list(completed_statuses)
     return {
         "items": items,
         "sections": [
             {"id": s.lower().replace(" ", "_"), "name": s}
-            for s in active_statuses
+            for s in all_statuses
         ],
     }
 
@@ -163,6 +178,23 @@ class NotionTodoCoordinator(DataUpdateCoordinator):
             properties[self.status_property] = {prop: {"name": target_status}}
         await self.client.create_page(self.database_id, properties)
         await self.async_request_refresh()
+
+    async def async_archive_done(self, archive_status: str = "Archive") -> None:
+        """Move all completed (non-archive) items to the archive status."""
+        if not self.data:
+            return
+        prop = await self._detect_property_type()
+        done_items = [
+            item for item in self.data["items"]
+            if item["checked"] and item["status"] != archive_status
+        ]
+        for item in done_items:
+            await self.client.update_page(
+                item["id"],
+                {self.status_property: {prop: {"name": archive_status}}},
+            )
+        if done_items:
+            await self.async_request_refresh()
 
     async def async_delete_item(self, page_id: str) -> None:
         """Archive a page (soft-delete)."""

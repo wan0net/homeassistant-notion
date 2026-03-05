@@ -1,9 +1,12 @@
 """Notion integration for Home Assistant."""
 from __future__ import annotations
 
+import voluptuous as vol
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, CONF_SCAN_INTERVAL, Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
@@ -18,6 +21,42 @@ from .coordinator import NotionTodoCoordinator
 from .notion_client import NotionClient
 
 PLATFORMS = [Platform.SENSOR, Platform.TODO]
+
+SERVICE_SET_ITEM_STATUS = "set_item_status"
+SERVICE_ARCHIVE_DONE = "archive_done"
+
+SERVICE_SET_ITEM_STATUS_SCHEMA = vol.Schema(
+    {
+        vol.Required("item_id"): cv.string,
+        vol.Required("status"): cv.string,
+    }
+)
+
+SERVICE_ARCHIVE_DONE_SCHEMA = vol.Schema(
+    {
+        vol.Optional("archive_status", default="Archive"): cv.string,
+    }
+)
+
+
+def _get_coordinator_for_item(hass: HomeAssistant, item_id: str) -> NotionTodoCoordinator | None:
+    """Find the coordinator that owns a given Notion page ID."""
+    for coordinator in hass.data.get(DOMAIN, {}).values():
+        if not isinstance(coordinator, NotionTodoCoordinator):
+            continue
+        if coordinator.data and any(
+            i["id"] == item_id for i in coordinator.data.get("items", [])
+        ):
+            return coordinator
+    return None
+
+
+def _get_any_coordinator(hass: HomeAssistant) -> NotionTodoCoordinator | None:
+    """Return any available coordinator (used for archive_done across all entries)."""
+    for coordinator in hass.data.get(DOMAIN, {}).values():
+        if isinstance(coordinator, NotionTodoCoordinator):
+            return coordinator
+    return None
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -41,6 +80,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
+    # Register services once (idempotent — HA deduplicates)
+    if not hass.services.has_service(DOMAIN, SERVICE_SET_ITEM_STATUS):
+
+        async def handle_set_item_status(call: ServiceCall) -> None:
+            item_id = call.data["item_id"]
+            status = call.data["status"]
+            coordinator = _get_coordinator_for_item(hass, item_id)
+            if coordinator:
+                await coordinator.async_set_status(item_id, status)
+
+        async def handle_archive_done(call: ServiceCall) -> None:
+            archive_status = call.data.get("archive_status", "Archive")
+            for coord in hass.data.get(DOMAIN, {}).values():
+                if isinstance(coord, NotionTodoCoordinator):
+                    await coord.async_archive_done(archive_status)
+
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_SET_ITEM_STATUS,
+            handle_set_item_status,
+            schema=SERVICE_SET_ITEM_STATUS_SCHEMA,
+        )
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_ARCHIVE_DONE,
+            handle_archive_done,
+            schema=SERVICE_ARCHIVE_DONE_SCHEMA,
+        )
+
     return True
 
 
