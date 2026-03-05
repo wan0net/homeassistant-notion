@@ -6,6 +6,7 @@ from pathlib import Path
 import voluptuous as vol
 
 from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, CONF_SCAN_INTERVAL, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -69,11 +70,13 @@ _CARD_REGISTERED = f"{DOMAIN}_card_registered"
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Serve and inject the bundled Lovelace card (once per HA lifetime)
     if not hass.data.get(_CARD_REGISTERED):
-        hass.http.register_static_path(
-            _CARD_URL,
-            str(Path(__file__).parent / "notion-kanban-card.js"),
-            cache_headers=False,
-        )
+        hass.http.async_register_static_paths([
+            StaticPathConfig(
+                _CARD_URL,
+                str(Path(__file__).parent / "notion-kanban-card.js"),
+                cache_headers=False,
+            )
+        ])
         add_extra_js_url(hass, _CARD_URL)
         hass.data[_CARD_REGISTERED] = True
 

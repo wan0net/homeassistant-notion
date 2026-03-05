@@ -1,0 +1,27 @@
+set_item_status:
+  name: Set item status
+  description: Set the status of a Notion page (task).
+  fields:
+    item_id:
+      name: Item ID
+      description: The Notion page ID of the item to update.
+      required: true
+      selector:
+        text:
+    status:
+      name: Status
+      description: The new status value (must match one of the configured statuses).
+      required: true
+      selector:
+        text:
+
+archive_done:
+  name: Archive done items
+  description: Move all completed (non-archive) items to the archive status.
+  fields:
+    archive_status:
+      name: Archive status
+      description: The status value to use for archived items (default "Archive").
+      required: false
+      selector:
+        text:
