@@ -42,13 +42,19 @@ const NOTION_BG = {
 
 /* ---------- Static CSS (no user content) ---------------------------------- */
 const CSS = `
-:host { display: block; }
+:host {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
 .root {
   background: var(--ha-card-background, var(--card-background-color, #fff));
   border-radius: var(--ha-card-border-radius, 12px);
   box-shadow: var(--ha-card-box-shadow, 0 2px 8px rgba(0,0,0,.12));
   padding: 16px;
   overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 .header {
   display: flex; align-items: center; justify-content: space-between;
