@@ -70,7 +70,20 @@ _CARD_REGISTERED = f"{DOMAIN}_card_registered"
 
 
 async def _ensure_lovelace_resource(hass: HomeAssistant, url: str) -> None:
-    """Persist the card as a Lovelace resource so HA loads it before rendering."""
+    """Register the card as a Lovelace resource (in-memory + persistent storage)."""
+    # Try the live in-memory collection first — updates both memory and storage
+    resources = hass.data.get("lovelace", {}).get("resources")
+    if resources is not None:
+        try:
+            existing = [r for r in resources.async_items() if url in r.get("url", "")]
+            if existing:
+                return
+            await resources.async_create_item({"url": url, "res_type": "module"})
+            return
+        except Exception as err:
+            _LOGGER.debug("Lovelace resource collection unavailable, using storage: %s", err)
+
+    # Fallback: write directly to storage (picked up on next HA restart)
     store = Store(hass, 1, "lovelace_resources")
     data = await store.async_load() or {"items": []}
     if any(url in item.get("url", "") for item in data.get("items", [])):
