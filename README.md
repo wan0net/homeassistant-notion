@@ -32,14 +32,14 @@ A Home Assistant custom integration that connects your Notion databases to HA. A
 3. Search for "Notion" in HACS and install
 4. Restart Home Assistant
 
-HACS will install both the integration and the `notion-kanban-card` Lovelace resource automatically.
+The integration automatically registers `notion-kanban-card` as a Lovelace resource on first setup — no manual resource steps needed.
 
 ### Manual
 
 1. Copy `custom_components/notion_ha/` into your HA `custom_components/` directory.
-2. Copy `www/notion-kanban-card.js` into your HA `www/` directory (create it if it doesn't exist).
-3. Add the JS file as a Lovelace resource (type: **module**, URL: `/local/notion-kanban-card.js`).
-4. Restart Home Assistant.
+2. Restart Home Assistant.
+
+The integration registers the card JS and Lovelace resource automatically on startup.
 
 ## Setup
 
