@@ -68,13 +68,15 @@ const CSS = `
   scrollbar-width: thin;
   scrollbar-color: var(--divider-color, #e0e0e0) transparent;
   align-items: flex-start;
+  width: 100%;
+  box-sizing: border-box;
 }
 .board::-webkit-scrollbar { height: 5px; }
 .board::-webkit-scrollbar-thumb {
   background: var(--divider-color, #e0e0e0); border-radius: 3px;
 }
 .col {
-  flex: 0 0 220px; min-width: 220px;
+  flex: 1 1 180px; min-width: 160px;
   background: var(--secondary-background-color, rgba(0,0,0,0.04));
   border-radius: 10px; padding: 10px 8px;
   transition: background 0.15s;
