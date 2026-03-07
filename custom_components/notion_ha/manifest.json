@@ -1,6 +1,6 @@
 {
   "domain": "notion_ha",
-  "name": "Notion",
+  "name": "Notion Kanban",
   "version": "0.1.0",
   "documentation": "https://github.com/wan0net/homeassistant-notion",
   "issue_tracker": "https://github.com/wan0net/homeassistant-notion/issues",

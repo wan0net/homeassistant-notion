@@ -1,4 +1,4 @@
-# Notion for Home Assistant
+# Notion Kanban for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -6,7 +6,7 @@
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=wan0net&repository=homeassistant-notion&category=integration)
 
-A Home Assistant custom integration that connects your Notion databases to HA. A single HACS install gives you:
+A Home Assistant custom integration that turns Notion databases into kanban boards and todo lists. A single HACS install gives you:
 
 - **Todo list entity** — create, update, and check off tasks; all changes write back to Notion instantly.
 - **Kanban sensor** — structured data for the included kanban card.
@@ -34,7 +34,7 @@ A Home Assistant custom integration that connects your Notion databases to HA. A
 
 1. In HACS, go to **Integrations** → three-dot menu → **Custom repositories**
 2. Add `https://github.com/wan0net/homeassistant-notion` as an **Integration**
-3. Search for "Notion" in HACS and install
+3. Search for "Notion Kanban" in HACS and install
 4. Restart Home Assistant
 
 The integration automatically registers `notion-kanban-card` as a Lovelace resource on first setup — no manual resource steps needed.
@@ -62,7 +62,7 @@ The integration registers the Lovelace resource automatically on startup.
 ### 3. Add the integration to Home Assistant
 
 1. Go to **Settings** → **Devices & Services** → **Add Integration**
-2. Search for **Notion**
+2. Search for **Notion Kanban**
 3. Enter your API key
 4. Paste the database URL or ID
 5. Select the status property and configure which values are active vs completed

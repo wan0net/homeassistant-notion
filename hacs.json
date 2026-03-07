@@ -1,5 +1,5 @@
 {
-  "name": "Notion",
+  "name": "Notion Kanban",
   "domains": ["sensor", "todo"],
   "render_readme": true,
   "homeassistant": "2024.1.0"
