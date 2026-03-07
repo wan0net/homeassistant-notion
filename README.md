@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![AI Generated](https://img.shields.io/badge/AI%20Generated-Claude-blueviolet)](https://claude.ai)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=wan0net&repository=homeassistant-notion&category=integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=wan0net&repository=homeassistant-notion-kanban&category=integration)
 
 Turn any Notion database into a kanban board and todo list in Home Assistant. Includes a custom Lovelace card with drag-and-drop columns, label chips, due dates, and optimistic updates.
 
@@ -29,7 +29,7 @@ Turn any Notion database into a kanban board and todo list in Home Assistant. In
 ### HACS (Recommended)
 
 1. Open HACS → Integrations → three-dot menu → **Custom repositories**
-2. Add `wan0net/homeassistant-notion` as **Integration**
+2. Add `wan0net/homeassistant-notion-kanban` as **Integration**
 3. Download and restart Home Assistant
 
 The integration automatically registers `notion-kanban-card` as a Lovelace resource — no manual resource steps needed.
